@@ -1,6 +1,7 @@
 const User = require('../models/UserSchema');
 const authService = require('../Services/authService');
-
+// const Pos = require ('../models/PosSchema')
+const posvalidator = require('../utils/PosValidator')
 class AuthController {
 
   static async getCurrentUser(req, res) {
@@ -19,40 +20,87 @@ class AuthController {
     // --------------------------- 
 
   static async register(req, res) {
-    try {
-      const { firstName, lastName, email, password } = req.body;
+  try {
+    const { firstName, lastName, email, posId, password } = req.body;
 
-      const existingUser = await User.findOne({ email });
-      if (existingUser) {
-        return res.status(409).json({ success: false, message: 'User already exists' });
-      }
-
-      const hashedPassword = await authService.hashPassword(password);
-
-      const user = await User.create({
-        firstName,
-        lastName,
-        email,
-        password: hashedPassword,
-        isEmailVerified: false,
+    // Basic validation
+    if (!email || !password || !posId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email, password, and posId are required',
       });
+    }
 
-      const token = authService.generateToken(user);
-
-      res.status(201).json({
-        success: true,
-        token,
-        user: authService.sanitizeUser(user),
+    // Check existing user
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: 'User already exists',
       });
-    } catch (error) {
-          console.error('========== REGISTER FAILED ==========');
+    }
+
+    // Check existing POS ID
+    const existingPosId = await User.findOne({ posId });
+    if (existingPosId) {
+      return res.status(409).json({
+        success: false,
+        message: 'POS ID already registered',
+      });
+    }
+
+    if(!posId) {
+      return res.status(404).json({
+        success:false,
+        message: 'POS ID is required',
+      })
+    }
+
+      // Find Pos by posID
+    //  const pos = await Pos.findOne({ posId })
+    //  if(!pos) {
+    //    return res.status(404).json({
+    //      success:false,
+    //      message: 'POS not found',
+    //    })
+    //  }
+
+    const hashedPassword = await authService.hashPassword(password);
+
+    const user = await User.create({
+      firstName,
+      lastName,
+      email,
+      password: hashedPassword,
+      posId,
+      isEmailVerified: false,
+    });
+    
+    // Populate POS before returning response
+    // const populatedUser = await User
+    //   .findById(user._id)
+    //   .populate('pos');
+
+    const token = authService.generateToken(user);
+
+    res.status(201).json({
+      success: true,
+      token,
+      user: authService.sanitizeUser(user),
+    });
+  } catch (error) {
+    console.error('========== REGISTER FAILED ==========');
     console.error(error);
     console.error('Stack:', error.stack);
     console.error('=====================================');
 
-      res.status(500).json({ success: false, message: 'Registration failed' });
-    }
+    res.status(500).json({
+      success: false,
+      message: 'Registration failed',
+    });
   }
+}
+
   // ---------------------------
   // LOGIN 
   // ---------------------------
