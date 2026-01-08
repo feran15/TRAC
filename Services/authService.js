@@ -14,12 +14,18 @@ class AuthService {
   }
 
   static generateToken(user) {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      // Provide a clear error so developers can fix missing env var quickly
+      throw new Error('JWT_SECRET environment variable is required to generate JWT tokens. Add JWT_SECRET to your .env file. Example: JWT_SECRET=your_super_secret_value');
+    }
+
     return jwt.sign(
       { 
         id: user._id,
         email: user.email 
       }, 
-      process.env.JWT_SECRET,
+      secret,
       {
         expiresIn: '24h',
         issuer: 'mybank-api',

@@ -1,7 +1,9 @@
 const express = require('express');
-const router = express.Router();
 const PosController = require('../controllers/PosController');
 
-router.post('/users/:id/addPos', PosController.addPosAccount);
+const router = express.Router();
+
+router.post('/AddPos', PosController.addPosAccount);
+
 
 module.exports = router;
