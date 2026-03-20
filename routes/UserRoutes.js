@@ -13,7 +13,7 @@ const {
 // Auth / User routes
 router.post('/register', validateRegistration, UserController.register);
 router.post('/login', loginLimiter, validateLogin, UserController.login);
-router.get('/me', UserController.getCurrentUser);
+router.get('/me', authenticateToken, UserController.getCurrentUser);
 
 
 module.exports = router;

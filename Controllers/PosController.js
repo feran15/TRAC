@@ -3,8 +3,18 @@ const validatePosId = require('../utils/PosValidator');
 
 exports.addPosAccount = async (req, res) => {
   try {
-    const { id } = req.params;        // user ID
+    const routeUserId = req.params.id;
+    const authUserId = req.user && req.user.id;
+    const userId = routeUserId || authUserId;
     const { posId } = req.body;       // POS ID from frontend
+
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    if (routeUserId && authUserId && routeUserId !== authUserId) {
+      return res.status(403).json({ message: 'You cannot link POS for another user' });
+    }
 
     // 1. Validate POS ID
     const posData = validatePosId(posId);
@@ -13,7 +23,7 @@ exports.addPosAccount = async (req, res) => {
     }
 
     // 2. Find user
-    const user = await User.findById(id);
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }

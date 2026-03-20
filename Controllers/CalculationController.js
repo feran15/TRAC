@@ -1,5 +1,61 @@
 const Transaction = require('../models/TransactionSchema');
 
+exports.createTransaction = async (req, res) => {
+  try {
+    const { transactionId, amount, source, posId, status, timestamp } = req.body;
+
+    if (amount === undefined || amount === null || Number.isNaN(Number(amount))) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid amount is required',
+      });
+    }
+
+    const allowedSources = ['cash', 'pos', 'expense'];
+    if (!allowedSources.includes(source)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Source must be one of: cash, pos, expense',
+      });
+    }
+
+    const allowedStatuses = ['pending', 'confirmed', 'synced'];
+    if (status && !allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Status must be one of: pending, confirmed, synced',
+      });
+    }
+
+    const createdTransaction = await Transaction.create({
+      transactionId: transactionId || `TXN-${Date.now()}`,
+      amount: Number(amount),
+      source,
+      posId: posId || null,
+      status: status || 'pending',
+      timestamp: timestamp ? new Date(timestamp) : new Date(),
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Transaction created successfully',
+      transaction: createdTransaction,
+    });
+  } catch (error) {
+    if (error && error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: 'Duplicate transaction detected',
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to create transaction',
+    });
+  }
+};
+
 exports.calculateTotals = async (req, res) => {
   try {
     /**
