@@ -1,8 +1,4 @@
 /node_modules
 .env
 
-.contracts/
-.api-contract.js
-.contractsREADME.md
-.api-contract.d.ts
-
+/contracts
